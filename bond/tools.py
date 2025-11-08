@@ -15,6 +15,7 @@ import json
 import re
 from typing import Any, Dict, Optional
 from urllib.parse import quote_plus
+from datetime import datetime
 
 
 def ping(host: str) -> str:
@@ -664,3 +665,122 @@ def web_search(query: str, num_results: int = 3) -> str:
         return f"error: Missing dependencies. Install with: uv add google-search-results requests beautifulsoup4. Error: {str(e)}"
     except Exception as e:
         return f"error: Search failed - {str(e)}"
+
+
+# ============================================================
+# Workspace Management Tools (Prevent Directory Pollution)
+# ============================================================
+
+def get_demo_workspace(name: str) -> str:
+    """
+    Get an isolated workspace directory for a demo application.
+    
+    Args:
+        name: Name of the demo (e.g., "flask_app", "django_blog")
+    
+    Returns:
+        Absolute path to the demo workspace
+    """
+    try:
+        from bond.workspace import get_workspace_manager
+        workspace = get_workspace_manager()
+        demo_path = workspace.create_demo_workspace(name)
+        return f"Demo workspace created: {demo_path}\nYou should cd to this directory before creating files."
+    except Exception as e:
+        return f"error: Failed to create demo workspace - {e}"
+
+def get_test_workspace(test_type: str = "general") -> str:
+    """
+    Get an isolated workspace directory for tests.
+    
+    Args:
+        test_type: Type of test (e.g., "unit", "integration", "manual")
+    
+    Returns:
+        Absolute path to the test workspace
+    """
+    try:
+        from bond.workspace import get_workspace_manager
+        workspace = get_workspace_manager()
+        test_path = workspace.create_test_workspace(test_type)
+        return f"Test workspace created: {test_path}\nYou should cd to this directory before creating test files."
+    except Exception as e:
+        return f"error: Failed to create test workspace - {e}"
+
+def get_temp_workspace() -> str:
+    """
+    Get a temporary workspace directory for scratch work.
+    
+    Returns:
+        Absolute path to the temporary workspace
+    """
+    try:
+        from bond.workspace import get_workspace_manager
+        workspace = get_workspace_manager()
+        temp_path = workspace.create_temp_session()
+        return f"Temporary workspace created: {temp_path}\nThis will be auto-cleaned after 7 days."
+    except Exception as e:
+        return f"error: Failed to create temporary workspace - {e}"
+
+def list_workspaces() -> str:
+    """
+    List all available workspaces (demos, tests, temp).
+    
+    Returns:
+        Formatted list of workspaces
+    """
+    try:
+        from bond.workspace import get_workspace_manager
+        workspace = get_workspace_manager()
+        
+        output = []
+        output.append("DEMO WORKSPACES:")
+        demos = workspace.list_demos()
+        if demos:
+            for demo in demos:
+                output.append(f"  • {demo.name}")
+        else:
+            output.append("  (none)")
+        
+        output.append("\nTEST WORKSPACES:")
+        tests = workspace.list_tests()
+        if tests:
+            for test in tests:
+                output.append(f"  • {test.name}")
+        else:
+            output.append("  (none)")
+        
+        output.append("\nTEMP SESSIONS:")
+        temp_sessions = workspace.list_temp_sessions()
+        if temp_sessions:
+            for session in temp_sessions:
+                # Show timestamp for better visibility
+                session_age = datetime.fromtimestamp(session.stat().st_mtime).strftime('%Y-%m-%d %H:%M')
+                output.append(f"  • {session.name} (created: {session_age})")
+        else:
+            output.append("  (none)")
+        
+        return "\n".join(output)
+    except Exception as e:
+        return f"error: Failed to list workspaces - {e}"
+
+def cleanup_workspaces(days: int = 7) -> str:
+    """
+    Clean up old temporary workspaces.
+    
+    Args:
+        days: Remove temp sessions older than this many days
+    
+    Returns:
+        Cleanup summary
+    """
+    try:
+        from bond.workspace import get_workspace_manager
+        workspace = get_workspace_manager()
+        cleaned = workspace.cleanup_old_sessions(days)
+        if cleaned:
+            return f"Cleaned up {len(cleaned)} temporary sessions older than {days} days:\n" + "\n".join([f"  • {name}" for name in cleaned])
+        else:
+            return f"No temporary sessions older than {days} days to clean up."
+    except Exception as e:
+        return f"error: Failed to cleanup workspaces - {e}"

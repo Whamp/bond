@@ -29,6 +29,9 @@ class BondAgent:
         self.context: List[Dict[str, Any]] = []
         self.tools: Dict[str, Dict[str, Any]] = {}
         self.tool_functions: Dict[str, Callable] = {}
+        
+        # Add workspace management system prompt to guide the LLM
+        self._add_workspace_prompt()
 
     def add_tool(self, name: str, description: str, parameters: Dict[str, Any], function: Callable):
         """
@@ -275,6 +278,44 @@ class BondAgent:
         # Continue with normal processing
         return self.process(user_input)
 
+    def _add_workspace_prompt(self):
+        """Add workspace management instructions to the agent"""
+        workspace_prompt = """
+WORKSPACE MANAGEMENT RULES:
+
+IMPORTANT: When creating demo applications, tutorials, or example files, you MUST use the workspace system to avoid polluting the Bond project directory:
+
+1. ALWAYS call get_demo_workspace('name') before creating demo files
+2. ALWAYS cd to the workspace directory provided
+3. NEVER create demo files (like app.py, requirements.txt, etc.) in the main project directory
+4. For tests, use get_test_workspace('type')  
+5. For temporary work, use get_temp_workspace()
+
+Example workflow:
+User: "how to set up a Flask app"
+You: 
+1. Call get_demo_workspace("flask_app") → gets path like /home/will/projects/bond/.workspace/demos/flask_app_20251108_123456
+2. Call bash("cd /path/to/workspace")  
+3. Create demo files in that directory
+4. Tell user: "Demo created in [workspace_path]"
+
+Use list_workspaces() to see all workspaces.
+Use cleanup_workspaces() to remove old temporary files.
+
+This keeps the Bond project clean and organized!
+"""
+        # Store the prompt to be used when needed
+        self.workspace_prompt = workspace_prompt
+
+    def context_has_workspace_prompt(self) -> bool:
+        """Check if workspace management prompt is already in context"""
+        if not self.context:
+            return False
+        for message in self.context:
+            if message.get('role') == 'system' and 'WORKSPACE MANAGEMENT RULES' in message.get('content', ''):
+                return True
+        return False
+
     def process(self, user_input: str) -> str:
         """
         Process user input through the agent.
@@ -292,6 +333,15 @@ class BondAgent:
         Returns:
             Agent's response text
         """
+        # Add workspace instructions if this might be a request to create demos/tests
+        needs_workspace = any(keyword.lower() in user_input.lower() for keyword in [
+            "how to", "set up", "create", "demo", "tutorial", "example", 
+            "build", "install", "test", "example", "sample"
+        ])
+        
+        if needs_workspace and not self.context_has_workspace_prompt():
+            self.context.append({"role": "system", "content": self.workspace_prompt})
+        
         # Add user input to context
         self.context.append({"role": "user", "content": user_input})
 

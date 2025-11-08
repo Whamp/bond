@@ -351,6 +351,66 @@ def setup_agent(agent: BondAgent):
         function=tools.web_search
     )
 
+    # Workspace management tools
+    agent.add_tool(
+        name="get_demo_workspace",
+        description="Get an isolated workspace directory for demo applications. ALWAYS use this before creating demo files to avoid polluting the project directory.",
+        parameters={
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Name of the demo (e.g., 'flask_app', 'react_todo')"
+                }
+            },
+            "required": ["name"],
+        },
+        function=tools.get_demo_workspace
+    )
+
+    agent.add_tool(
+        name="get_test_workspace",
+        description="Get an isolated workspace directory for test files",
+        parameters={
+            "type": "object",
+            "properties": {
+                "test_type": {
+                    "type": "string",
+                    "description": "Type of test (e.g., 'unit', 'integration', 'manual')"
+                }
+            },
+            "required": [],
+        },
+        function=tools.get_test_workspace
+    )
+
+    agent.add_tool(
+        name="list_workspaces",
+        description="List all demo and test workspaces",
+        parameters={
+            "type": "object",
+            "properties": {},
+            "required": [],
+        },
+        function=tools.list_workspaces
+    )
+
+    agent.add_tool(
+        name="cleanup_workspaces",
+        description="Clean up old temporary workspaces (older than specified days)",
+        parameters={
+            "type": "object",
+            "properties": {
+                "days": {
+                    "type": "integer",
+                    "description": "Remove temp sessions older than this many days (default: 7)"
+                }
+            },
+            "required": [],
+        },
+        function=tools.cleanup_workspaces
+    )
+
     # Advanced execution tools
     agent.add_tool(
         name="tree",
@@ -405,6 +465,7 @@ def print_banner():
     print("  • System: whoami, uname, df, ps, env, which")
     print("  • Network: curl")
     print("  • Web: web_search (Google with AI Overview) 🤖")
+    print("  • Workspaces: get_demo_workspace, get_test_workspace, list_workspaces 🗂️")
     print("  • GitHub: gh (repos, issues, PRs, releases)")
     print("  • Advanced: bash (execute arbitrary commands)")
     print()
