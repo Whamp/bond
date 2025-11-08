@@ -6,29 +6,29 @@ Provides a command-line interface similar to Claude Code.
 import sys
 import signal
 from bond.agent import BondAgent
-from bond.tools import ping, get_system_info, echo, calculate
+from bond import tools
 
 
 def setup_agent(agent: BondAgent):
     """Register available tools with the agent."""
-    # Ping tool
+    
+    # Basic utility tools
     agent.add_tool(
         name="ping",
-        description="ping some host on the internet",
+        description="Ping some host on the internet to test connectivity",
         parameters={
             "type": "object",
             "properties": {
                 "host": {
                     "type": "string",
-                    "description": "hostname or IP"
+                    "description": "hostname or IP address to ping"
                 }
             },
             "required": ["host"],
         },
-        function=ping
+        function=tools.ping
     )
 
-    # System info tool
     agent.add_tool(
         name="get_system_info",
         description="Get basic system information including platform, Python version, etc.",
@@ -37,10 +37,9 @@ def setup_agent(agent: BondAgent):
             "properties": {},
             "required": [],
         },
-        function=get_system_info
+        function=tools.get_system_info
     )
 
-    # Echo tool
     agent.add_tool(
         name="echo",
         description="Echo back a message",
@@ -54,10 +53,9 @@ def setup_agent(agent: BondAgent):
             },
             "required": ["message"],
         },
-        function=echo
+        function=tools.echo
     )
 
-    # Calculate tool
     agent.add_tool(
         name="calculate",
         description="Perform a basic mathematical calculation",
@@ -79,7 +77,319 @@ def setup_agent(agent: BondAgent):
             },
             "required": ["operation", "a", "b"],
         },
-        function=calculate
+        function=tools.calculate
+    )
+
+    # File system tools
+    agent.add_tool(
+        name="ls",
+        description="List directory contents with details",
+        parameters={
+            "type": "object",
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "description": "Directory path to list (default: current directory)"
+                }
+            },
+            "required": [],
+        },
+        function=tools.ls
+    )
+
+    agent.add_tool(
+        name="pwd",
+        description="Print current working directory path",
+        parameters={
+            "type": "object",
+            "properties": {},
+            "required": [],
+        },
+        function=tools.pwd
+    )
+
+    agent.add_tool(
+        name="cat",
+        description="Display the contents of a file",
+        parameters={
+            "type": "object",
+            "properties": {
+                "filepath": {
+                    "type": "string",
+                    "description": "Path to the file to display"
+                }
+            },
+            "required": ["filepath"],
+        },
+        function=tools.cat
+    )
+
+    agent.add_tool(
+        name="grep",
+        description="Search for a pattern in a file",
+        parameters={
+            "type": "object",
+            "properties": {
+                "pattern": {
+                    "type": "string",
+                    "description": "Pattern to search for"
+                },
+                "filepath": {
+                    "type": "string",
+                    "description": "File to search in"
+                }
+            },
+            "required": ["pattern", "filepath"],
+        },
+        function=tools.grep
+    )
+
+    agent.add_tool(
+        name="find",
+        description="Find files matching a pattern in a directory",
+        parameters={
+            "type": "object",
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "description": "Directory to search in"
+                },
+                "name_pattern": {
+                    "type": "string",
+                    "description": "Filename pattern to match (e.g., '*.py')"
+                }
+            },
+            "required": ["path"],
+        },
+        function=tools.find
+    )
+
+    agent.add_tool(
+        name="head",
+        description="Display first N lines of a file",
+        parameters={
+            "type": "object",
+            "properties": {
+                "filepath": {
+                    "type": "string",
+                    "description": "Path to the file"
+                },
+                "lines": {
+                    "type": "integer",
+                    "description": "Number of lines to show (default: 10)"
+                }
+            },
+            "required": ["filepath"],
+        },
+        function=tools.head
+    )
+
+    agent.add_tool(
+        name="tail",
+        description="Display last N lines of a file",
+        parameters={
+            "type": "object",
+            "properties": {
+                "filepath": {
+                    "type": "string",
+                    "description": "Path to the file"
+                },
+                "lines": {
+                    "type": "integer",
+                    "description": "Number of lines to show (default: 10)"
+                }
+            },
+            "required": ["filepath"],
+        },
+        function=tools.tail
+    )
+
+    agent.add_tool(
+        name="wc",
+        description="Count lines, words, and characters in a file",
+        parameters={
+            "type": "object",
+            "properties": {
+                "filepath": {
+                    "type": "string",
+                    "description": "Path to the file"
+                }
+            },
+            "required": ["filepath"],
+        },
+        function=tools.wc
+    )
+
+    # System information tools
+    agent.add_tool(
+        name="whoami",
+        description="Display current user name",
+        parameters={
+            "type": "object",
+            "properties": {},
+            "required": [],
+        },
+        function=tools.whoami
+    )
+
+    agent.add_tool(
+        name="uname",
+        description="Display system information (OS, kernel, etc.)",
+        parameters={
+            "type": "object",
+            "properties": {},
+            "required": [],
+        },
+        function=tools.uname
+    )
+
+    agent.add_tool(
+        name="df",
+        description="Display disk space usage for all filesystems",
+        parameters={
+            "type": "object",
+            "properties": {},
+            "required": [],
+        },
+        function=tools.df
+    )
+
+    agent.add_tool(
+        name="ps",
+        description="Display currently running processes",
+        parameters={
+            "type": "object",
+            "properties": {},
+            "required": [],
+        },
+        function=tools.ps
+    )
+
+    agent.add_tool(
+        name="env",
+        description="Display environment variables",
+        parameters={
+            "type": "object",
+            "properties": {},
+            "required": [],
+        },
+        function=tools.env
+    )
+
+    agent.add_tool(
+        name="which",
+        description="Locate a command in the system PATH",
+        parameters={
+            "type": "object",
+            "properties": {
+                "command": {
+                    "type": "string",
+                    "description": "Command name to locate"
+                }
+            },
+            "required": ["command"],
+        },
+        function=tools.which
+    )
+
+    # Network tools
+    agent.add_tool(
+        name="curl",
+        description="Fetch content from a URL",
+        parameters={
+            "type": "object",
+            "properties": {
+                "url": {
+                    "type": "string",
+                    "description": "URL to fetch"
+                },
+                "options": {
+                    "type": "string",
+                    "description": "Additional curl options (e.g., '-I' for headers)"
+                }
+            },
+            "required": ["url"],
+        },
+        function=tools.curl
+    )
+
+    # GitHub CLI tool
+    agent.add_tool(
+        name="gh",
+        description="Execute GitHub CLI commands to interact with repositories, issues, PRs, releases, etc. Common commands: 'repo view', 'issue list', 'pr list', 'pr status', 'release list', 'status'",
+        parameters={
+            "type": "object",
+            "properties": {
+                "command": {
+                    "type": "string",
+                    "description": "GitHub CLI command (without 'gh' prefix). Examples: 'repo view', 'issue list', 'pr list', 'pr status', 'release list', 'status', 'browse'"
+                }
+            },
+            "required": ["command"],
+        },
+        function=tools.gh
+    )
+
+    # Web search tool (Terminal Bench enhancement)
+    agent.add_tool(
+        name="web_search",
+        description="Search the web using Google with AI Overview extraction. Essential for finding commands, frameworks, and solutions. Based on Apex2's breakthrough technique.",
+        parameters={
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "Search query to find solutions, commands, or documentation"
+                },
+                "num_results": {
+                    "type": "integer",
+                    "description": "Number of top results to analyze (default: 3)"
+                }
+            },
+            "required": ["query"],
+        },
+        function=tools.web_search
+    )
+
+    # Advanced execution tools
+    agent.add_tool(
+        name="tree",
+        description="Display directory tree structure. Useful for visualizing project layout.",
+        parameters={
+            "type": "object",
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "description": "Directory path to display (default: current directory)"
+                },
+                "level": {
+                    "type": "integer",
+                    "description": "Maximum depth to descend (e.g., 2 for 2 levels)"
+                },
+                "options": {
+                    "type": "string",
+                    "description": "Additional options: -a (all files), -d (dirs only), --gitignore (respect .gitignore), -I 'pattern' (ignore pattern)"
+                }
+            },
+            "required": [],
+        },
+        function=tools.tree
+    )
+
+    agent.add_tool(
+        name="bash",
+        description="Execute arbitrary bash command. Use with caution.",
+        parameters={
+            "type": "object",
+            "properties": {
+                "command": {
+                    "type": "string",
+                    "description": "Bash command to execute"
+                }
+            },
+            "required": ["command"],
+        },
+        function=tools.bash
     )
 
 
@@ -89,9 +399,16 @@ def print_banner():
     print("Bond - LLM Agent with Tool Calling")
     print("=" * 60)
     print()
-    print("Available tools: ping, get_system_info, echo, calculate")
-    print("Type '/help' for commands, '/exit' to quit")
+    print("Available tool categories:")
+    print("  • Basic: ping, echo, calculate, get_system_info")
+    print("  • Files: ls, pwd, cat, grep, find, head, tail, wc, tree")
+    print("  • System: whoami, uname, df, ps, env, which")
+    print("  • Network: curl")
+    print("  • Web: web_search (Google with AI Overview) 🤖")
+    print("  • GitHub: gh (repos, issues, PRs, releases)")
+    print("  • Advanced: bash (execute arbitrary commands)")
     print()
+    print("Type '/help' for commands, '/exit' to quit")
     print("-" * 60)
     print()
 

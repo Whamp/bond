@@ -7,6 +7,9 @@ requires-python = ">=3.12"
 dependencies = [
     "zai-sdk>=0.0.4",
     "anthropic>=0.72.0",
+    "google-search-results>=2.4.2",
+    "requests>=2.31.0",
+    "beautifulsoup4>=4.12.0",
 ]
 
 [dependency-groups]
