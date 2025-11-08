@@ -565,7 +565,6 @@ def web_search(query: str, num_results: int = 3) -> str:
         Formatted search results including AI overview and key findings
     """
     try:
-        # Import here to avoid import errors if package not installed
         import os
         from serpapi import GoogleSearch
         import requests
@@ -587,8 +586,21 @@ def web_search(query: str, num_results: int = 3) -> str:
         }
         
         # Perform search
-        search = GoogleSearch(params)
-        results = search.get_dict()
+        import signal
+        
+        def timeout_handler(signum, frame):
+            raise TimeoutError("Search timeout")
+        
+        signal.signal(signal.SIGALRM, timeout_handler)
+        signal.alarm(15)  # 15 second timeout
+        
+        try:
+            search = GoogleSearch(params)
+            results = search.get_dict()
+            signal.alarm(0)  # Cancel alarm
+        except TimeoutError:
+            signal.alarm(0)
+            return "error: Search request timed out"
         
         # Extract organic results
         organic_results = results.get("organic_results", [])
@@ -623,7 +635,7 @@ def web_search(query: str, num_results: int = 3) -> str:
             
             # Try to fetch content from the link for more detailed analysis
             try:
-                response = requests.get(link, timeout=10, headers={'User-Agent': 'Mozilla/5.0'})
+                response = requests.get(link, timeout=5, headers={'User-Agent': 'Mozilla/5.0'})
                 if response.status_code == 200:
                     soup = BeautifulSoup(response.text, 'html.parser')
                     # Extract first paragraph of main content

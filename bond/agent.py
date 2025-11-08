@@ -225,6 +225,56 @@ class BondAgent:
 
         return True
 
+    def process_with_intelligence(self, user_input: str) -> str:
+        """
+        Process user input with search intelligence (enhanced for Terminal Bench).
+        
+        Steps:
+        1. Check if search is needed for this request
+        2. If yes, search for relevant information
+        3. Add findings to context
+        4. Continue with normal processing
+        
+        Args:
+            user_input: User's input message
+        
+        Returns:
+            Agent's response text with search-enhanced context when available
+        """
+        # Determine if we should search based on the request
+        search_triggers = [
+            "how to", "set up", "create", "install", "configure", "troubleshoot",
+            "fix", "error", "problem", "tutorial", "guide", "example", "documentation"
+        ]
+        
+        should_search = any(trigger in user_input.lower() for trigger in search_triggers)
+        
+        # Simple heuristic: if it's asking for information about commands/tools/frameworks
+        # and contains technical terms, it's worth searching
+        if should_search and "web_search" in self.tool_functions:
+            try:
+                # Search for relevant information
+                search_query = f"{user_input} command solution tutorial github"
+                print("🔍 Searching web for relevant information...")
+                search_result = self.tool_call("web_search", {"query": search_query})
+                
+                if search_result and not search_result.get("content", "").startswith("error"):
+                    # Add search results as context
+                    search_context = f"WEB SEARCH FINDINGS:\n{search_result['content']}\n\nBased on the user's request and the search findings above, provide a helpful response."
+                    self.context.append({"role": "system", "content": search_context})
+                    print("✅ Search results added to context")
+                else:
+                    search_error = search_result.get("content", "Search failed")
+                    if not search_error.startswith("error: SERPAPI_KEY"):
+                        # Add other errors as context
+                        self.context.append({"role": "system", "content": f"Search error: {search_error}"})
+            except Exception as e:
+                # Silently continue if search fails
+                pass
+        
+        # Continue with normal processing
+        return self.process(user_input)
+
     def process(self, user_input: str) -> str:
         """
         Process user input through the agent.

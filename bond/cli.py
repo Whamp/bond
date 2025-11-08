@@ -489,9 +489,9 @@ def run_cli():
             elif user_input == '':
                 continue
 
-            # Process with agent
+            # Process with agent (using enhanced intelligence)
             try:
-                response = agent.process(user_input)
+                response = agent.process_with_intelligence(user_input)
                 print(response)
             except Exception as e:
                 print(f"Error: {str(e)}")
