@@ -3,17 +3,30 @@ Tools that the Bond agent can use.
 Each tool is a simple Python function with a well-defined purpose.
 """
 
+import subprocess
 from typing import Any, Dict
 
 
-def ping() -> str:
+def ping(host: str) -> str:
     """
-    Simple ping tool to test if the agent is working.
+    Ping some host on the internet.
+
+    Args:
+        host: hostname or IP address to ping
 
     Returns:
-        A pong response to confirm the system is operational
+        Ping command output or error message
     """
-    return "pong"
+    try:
+        result = subprocess.run(
+            ["ping", "-c", "5", host],
+            text=True,
+            stderr=subprocess.STDOUT,
+            stdout=subprocess.PIPE
+        )
+        return result.stdout
+    except Exception as e:
+        return f"error: {e}"
 
 
 def get_system_info() -> Dict[str, Any]:

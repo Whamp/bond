@@ -14,11 +14,16 @@ def setup_agent(agent: BondAgent):
     # Ping tool
     agent.add_tool(
         name="ping",
-        description="Test if the agent is working. Returns 'pong'.",
+        description="ping some host on the internet",
         parameters={
             "type": "object",
-            "properties": {},
-            "required": [],
+            "properties": {
+                "host": {
+                    "type": "string",
+                    "description": "hostname or IP"
+                }
+            },
+            "required": ["host"],
         },
         function=ping
     )
@@ -101,7 +106,8 @@ def print_help():
     print("  /context   - Show conversation history")
     print()
     print("Examples:")
-    print("  > ping the system")
+    print("  > ping 8.8.8.8")
+    print("  > ping google.com")
     print("  > what's my system info?")
     print("  > echo 'Hello Bond'")
     print("  > calculate 2 + 2")
