@@ -9,7 +9,7 @@
             "command": "echo 'UserPromptSubmit: Starting Apex2 prediction analysis' >> /tmp/apex2-hooks.log"
           }
         ]
-      }
+            "command": "python3 -c \"\nimport os\ntry:\n  # Check if validation should be triggered\n  with open('/tmp/apex2-hooks.log', 'a') as f:\n    f.write('STOP: Claude Code response completed - check for validation need\\n')\n  \n  # Check for modified files to validate\n  if os.path.exists('/tmp/apex2-hooks.log'):\n    with open('/tmp/apex2-hooks.log', 'r') as f:\n      content = f.read()\n      if 'file_modified:' in content:\n        with open('/tmp/apex2-hooks.log', 'a') as f:\n          f.write('RECOMMENDATION: Run validation-guardian before claiming completion\\n')\nexcept Exception as e:\n  with open('/tmp/apex2-hooks.log', 'a') as f:\n    f.write(f'stop hook error: {e}\\n')\n\""
     ],
     "PostToolUse": [
       {
