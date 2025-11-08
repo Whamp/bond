@@ -9,7 +9,7 @@
             "command": "echo 'UserPromptSubmit: Starting Apex2 prediction analysis' >> /tmp/apex2-hooks.log"
           }
         ]
-            "command": "python3 -c \"\nimport os\ntry:\n  # Check if validation should be triggered\n  with open('/tmp/apex2-hooks.log', 'a') as f:\n    f.write('STOP: Claude Code response completed - check for validation need\\n')\n  \n  # Check for modified files to validate\n  if os.path.exists('/tmp/apex2-hooks.log'):\n    with open('/tmp/apex2-hooks.log', 'r') as f:\n      content = f.read()\n      if 'file_modified:' in content:\n        with open('/tmp/apex2-hooks.log', 'a') as f:\n          f.write('RECOMMENDATION: Run validation-guardian before claiming completion\\n')\nexcept Exception as e:\n  with open('/tmp/apex2-hooks.log', 'a') as f:\n    f.write(f'stop hook error: {e}\\n')\n\""
+      }
     ],
     "PostToolUse": [
       {
@@ -17,10 +17,12 @@
         "hooks": [
           {
             "type": "command", 
-            "command": "python3 -c \"\nimport json, sys, os, re\ntry:\n  data = json.load(sys.stdin)\n  tool = data.get('tool', '')\n  if tool in ['Bash', 'Execute']:\n    tool_input = data.get('tool_input', {})\n    command = tool_input.get('command', '')\n    desc = tool_input.get('description', '')\n    \n    # Check for execution errors by looking at return code in stderr\n    if 'non-zero exit' in str(os.environ.get('CLAUDE_OUTPUT', '')).lower():\n      log_entry = f'error: {tool} failed - {command[:100]}\\n'\n      with open('/tmp/apex2-hooks.log', 'a') as f:\n        f.write(log_entry)\nexcept Exception as e:\n  with open('/tmp/apex2-hooks.log', 'a') as f:\n    f.write(f'hook error: {e}\\n')\n\"\n          },
+            "command": "python3 -c \"\nimport json, sys, os, re\ntry:\n  data = json.load(sys.stdin)\n  tool = data.get('tool', '')\n  if tool in ['Bash', 'Execute']:\n    tool_input = data.get('tool_input', {})\n    command = tool_input.get('command', '')\n    desc = tool_input.get('description', '')\n    \n    # Check for execution errors by looking at return code in stderr\n    if 'non-zero exit' in str(os.environ.get('CLAUDE_OUTPUT', '')).lower():\n      log_entry = f'error: {tool} failed - {command[:100]}\\n'\n      with open('/tmp/apex2-hooks.log', 'a') as f:\n        f.write(log_entry)\nexcept Exception as e:\n  with open('/tmp/apex2-hooks.log', 'a') as f:\n    f.write(f'hook error: {e}\\n')\n\""
+          },
           {
             "type": "command",
-            "command": "python3 -c \"\nimport json, sys\ntry:\n  data = json.load(sys.stdin)\n  tool = data.get('tool', '')\n  tool_input = data.get('tool_input', {})\n  file_path = tool_input.get('file_path', '')\n  \n  # Track file modifications for later validation\n  if tool in ['Edit', 'Write'] and file_path:\n    log_entry = f'file_modified: {file_path} by {tool}\\n'\n    with open('/tmp/apex2-hooks.log', 'a') as f:\n      f.write(log_entry)\nexcept Exception as e:\n  with open('/tmp/apex2-hooks.log', 'a') as f:\n    f.write(f'file tracking error: {e}\\n')\n\"\n          }
+            "command": "python3 -c \"\nimport json, sys\ntry:\n  data = json.load(sys.stdin)\n  tool = data.get('tool', '')\n  tool_input = data.get('tool_input', {})\n  file_path = tool_input.get('file_path', '')\n  \n  # Track file modifications for later validation\n  if tool in ['Edit', 'Write'] and file_path:\n    log_entry = f'file_modified: {file_path} by {tool}\\n'\n    with open('/tmp/apex2-hooks.log', 'a') as f:\n      f.write(log_entry)\nexcept Exception as e:\n  with open('/tmp/apex2-hooks.log', 'a') as f:\n    f.write(f'file tracking error: {e}\\n')\n\""
+          }
         ]
       }
     ],
@@ -30,7 +32,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 -c \"\nimport json, sys, os, re\ntry:\n  data = json.load(sys.stdin)\n  tool_input = data.get('tool_input', {})\n  command = tool_input.get('command', '')\n  desc = tool_input.get('description', '')\n  \n  # Check for dangerous commands\n  dangerous_patterns = ['rm -rf', 'sudo rm', 'format', 'fdisk', 'mkfs']\n  for pattern in dangerous_patterns:\n    if pattern in command:\n      log_entry = f'WARNING: Dangerous command detected - {command}\\n'\n      with open('/tmp/apex2-hooks.log', 'a') as f:\n        f.write(log_entry)\n      break\n      \nexcept Exception as e:\n  with open('/tmp/apex2-hooks.log', 'a') as f:\n    f.write(f'pre-exec error: {e}\\n')\n\"\n          }
+            "command": "python3 -c \"\nimport json, sys, os, re\ntry:\n  data = json.load(sys.stdin)\n  tool_input = data.get('tool_input', {})\n  command = tool_input.get('command', '')\n  desc = tool_input.get('description', '')\n  \n  # Check for dangerous commands\n  dangerous_patterns = ['rm -rf', 'sudo rm', 'format', 'fdisk', 'mkfs']\n  for pattern in dangerous_patterns:\n    if pattern in command:\n      log_entry = f'WARNING: Dangerous command detected - {command}\\n'\n      with open('/tmp/apex2-hooks.log', 'a') as f:\n        f.write(log_entry)\n      break\n      \nexcept Exception as e:\n  with open('/tmp/apex2-hooks.log', 'a') as f:\n    f.write(f'pre-exec error: {e}\\n')\n\""
+          }
         ]
       }
     ],
@@ -51,7 +54,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 -c \"\ntry:\n  # Check if validation should be triggered\n  with open('/tmp/apex2-hooks.log', 'a') as f:\n    f.write('STOP: Claude Code response completed - check for validation need\\n')\n  \n  # Check for modified files to validate\n  if os.path.exists('/tmp/apex2-hooks.log'):\n    with open('/tmp/apex2-hooks.log', 'r') as f:\n      content = f.read()\n      if 'file_modified:' in content:\n        with open('/tmp/apex2-hooks.log', 'a') as f:\n          f.write('RECOMMENDATION: Run validation-guardian before claiming completion\\n')\nexcept Exception as e:\n  with open('/tmp/apex2-hooks.log', 'a') as f:\n    f.write(f'stop hook error: {e}\\n')\n\"\n          }
+            "command": "python3 -c \"\nimport os\ntry:\n  # Check if validation should be triggered\n  with open('/tmp/apex2-hooks.log', 'a') as f:\n    f.write('STOP: Claude Code response completed - check for validation need\\n')\n  \n  # Check for modified files to validate\n  if os.path.exists('/tmp/apex2-hooks.log'):\n    with open('/tmp/apex2-hooks.log', 'r') as f:\n      content = f.read()\n      if 'file_modified:' in content:\n        with open('/tmp/apex2-hooks.log', 'a') as f:\n          f.write('RECOMMENDATION: Run validation-guardian before claiming completion\\n')\nexcept Exception as e:\n  with open('/tmp/apex2-hooks.log', 'a') as f:\n    f.write(f'stop hook error: {e}\\n')\n\""
+          }
         ]
       }
     ]
